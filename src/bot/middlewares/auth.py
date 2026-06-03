@@ -13,7 +13,7 @@ class AuthenticatorMiddleware(BaseMiddleware):
         event: types.TelegramObject,
         data: Dict[str, Any]
     ) -> Any:
-        if not hasattr(event, "from_user") or not event.from_user:
+        if not hasattr(event, "from_user") or not event.from_user or event.from_user.is_bot:
             return await handler(event, data)
 
         async with async_session() as session:
