@@ -1,0 +1,45 @@
+# --- Security ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# --- Database & Storage ---
+# Игнорируем локальные данные БД и кэша Redis, если они маппятся в корень
+postgres_data/
+redis_data/
+*.db
+*.sqlite3
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Docker ---
+logs/
+*.log
+
+# --- Alembic ---
+# Логи миграций не нужны, но сами миграции (версии) НУЖНЫ (они в папке versions/)
