@@ -200,6 +200,20 @@ async def taker_confirms(
     # Продавцу
     await bot.send_message(chat_id=deal.seller_id, text=review_msg, reply_markup=rating_kb)
 
+    # Предложение скрыть объявление продавцу
+    ad_info = await ad_repo.get_ad_full_info_by_id(deal.ad_id)
+    if ad_info:
+        ad, _ = ad_info
+        await bot.send_message(
+            chat_id=deal.seller_id,
+            text=(
+                "💡 <b>Совет:</b> Если у вас закончилась ликвидность или вы больше не планируете сегодня торговать, "
+                "вы можете скрыть объявление из Маркета прямо сейчас.\n\n"
+                "Вернуть его можно в любое время в меню «📢 Мои объявления»."
+            ),
+            reply_markup=DealKeyboards.get_completion_seller_keyboard(ad.public_id)
+        )
+
     await callback.answer("✅ Сделка завершена!")
 
 @router.callback_query(F.data.startswith("rate_"))

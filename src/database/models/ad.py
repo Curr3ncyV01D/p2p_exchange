@@ -32,4 +32,5 @@ class Ad(Base):
     rate: Mapped[float] = mapped_column(Float)
     
     bank: Mapped[str] = mapped_column(String(50))
+    is_verified_only: Mapped[bool] = mapped_column(default=False)
     status: Mapped[AdStatus] = mapped_column(Enum(AdStatus), default=AdStatus.ACTIVE)

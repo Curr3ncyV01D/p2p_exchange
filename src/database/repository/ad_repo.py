@@ -18,6 +18,7 @@ class AdRepository:
             max_limit=float(data['max_limit']),
             rate=float(data['rate']),
             bank=data['bank'],
+            is_verified_only=data.get('is_verified_only', False),
             status=AdStatus.ACTIVE
         )
         self.session.add(new_ad)

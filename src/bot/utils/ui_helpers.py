@@ -24,11 +24,15 @@ class UIHelper:
         else:
             emoji = "⚪"
         ad_link = UIHelper.get_ad_link(bot_username, ad.public_id)
+
+        privacy_emoji = "🔒 " if ad.is_verified_only else "🌍"
+        access_text = "Только для верифицированных" if ad.is_verified_only else "Для всех пользователей"
         
         text = (
             f"📢 <b>Управление объявлением {ad_link}</b>\n\n"
             f"Статус: {emoji} {ad.status.value.upper()}\n"
-            f"Пара: <b>{ad.base_currency.value} / {ad.quote_currency.value}</b>\n"
+            f"{privacy_emoji} Доступ: {access_text}\n"
+            f"🔄 Обмен: <b>{ad.base_currency.value}</b> за <b>{ad.quote_currency.value}</b>\n"
             f"Курс: <b>{format_number(ad.rate)}</b>\n"
             f"Лимиты: {format_number(ad.min_limit)} - {format_number(ad.max_limit)} {ad.base_currency.value}\n"
             f"Банк: {ad.bank}\n"
@@ -50,6 +54,9 @@ class UIHelper:
         ad_link = UIHelper.get_ad_link(bot_username, ad.public_id)
         nominal = CURRENCY_NOMINALS.get(ad.base_currency.value, 1)
 
+        privacy_emoji = "🔒 " if ad.is_verified_only else "🌍"
+        access_text = "Только для верифицированных" if ad.is_verified_only else "Для всех пользователей"
+
         badges = get_user_badges(owner)
         badges_text = f"\n🏷 Статус: <b>{badges}</b>" if badges else ""
         
@@ -57,6 +64,7 @@ class UIHelper:
             f"📄 <b>Объявление {ad_link}</b>\n\n"
             f"👤 Владелец: <b>{owner.display_name}</b>{badges_text}\n"
             f"⭐ Рейтинг: <code>{owner.rating}</code> ({owner.deal_count} сделок)\n\n"
+            f"{privacy_emoji} Доступ: {access_text}\n\n"
             f"🔄 Обмен: <b>{ad.base_currency.value}</b> за <b>{ad.quote_currency.value}</b>\n"
             f"💰 Курс: <b>{format_number(ad.rate)} {ad.quote_currency.value}</b> за {nominal} {ad.base_currency.value}\n"
             f"📏 Лимиты: <b>{format_number(ad.min_limit)} - {format_number(ad.max_limit)} {ad.base_currency.value}</b>\n"
@@ -109,7 +117,6 @@ class UIHelper:
         if back_data:
             builder.row(InlineKeyboardButton(text="⬅️ Назад", callback_data=back_data))
         
-        # Если нужна кнопка Закрыть, добавляем её (в новый ряд или к кнопке Назад)
         if close:
             # .row() гарантирует, что кнопка будет на новой строке
             builder.row(InlineKeyboardButton(text="❌ Закрыть", callback_data="common_close"))

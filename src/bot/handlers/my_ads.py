@@ -153,3 +153,16 @@ async def toggle_ad_visibility(callback: types.CallbackQuery, user: User, db_ses
     
     status_msg = "активно" if ad.status == AdStatus.ACTIVE else "скрыто"
     await callback.answer(f"Объявление теперь {status_msg}")
+
+@router.callback_query(F.data.startswith("hide_ad_after_deal_"))
+async def hide_ad_after_deal(callback: types.CallbackQuery, db_session: AsyncSession):
+    public_id = callback.data.replace("hide_ad_after_deal_", "")
+    ad_repo = AdRepository(db_session)
+    
+    await ad_repo.update_ad_status(public_id, AdStatus.HIDDEN)
+    
+    await callback.message.edit_text(
+        "✅ Объявление скрыто. Вы можете активировать его позже в разделе «Мои объявления».",
+        reply_markup=AdKeyboards.get_success_keyboard()
+    )
+    await callback.answer()

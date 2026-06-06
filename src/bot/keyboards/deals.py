@@ -1,5 +1,6 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from src.bot.utils.ui_helpers import UIHelper
 
 class DealKeyboards:
     @staticmethod
@@ -28,4 +29,17 @@ class DealKeyboards:
             text="⚖️ Открыть спор", 
             callback_data=f"dispute_{public_id}"
         ))
+        return builder.as_markup()
+
+    @staticmethod
+    def get_completion_seller_keyboard(ad_public_id: str) -> InlineKeyboardMarkup:
+        """Предложение скрыть объявление из маркета после завершения сделки"""
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(
+            text="🙈 Скрыть объявление", 
+            callback_data=f"hide_ad_after_deal_{ad_public_id}"
+        ))
+        
+        UIHelper.add_common_buttons(builder)
+
         return builder.as_markup()

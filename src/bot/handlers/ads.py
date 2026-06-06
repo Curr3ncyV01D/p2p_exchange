@@ -18,7 +18,7 @@ router = Router()
 @router.message(F.text == "➕ Создать объявление")
 async def start_ad_creation(message: types.Message, state: FSMContext):
     await message.answer(
-        "<b>Шаг 1 из 5:</b> Выберите валюту, которую вы хотите <b>ПОЛУЧИТЬ</b>:",
+        "<b>Шаг 1 из 6:</b> Выберите валюту, которую вы хотите <b>ПОЛУЧИТЬ</b>:",
         reply_markup=AdKeyboards.get_currency_selection_keyboard()
     )
     await state.set_state(AdCreation.target_currency)
@@ -30,7 +30,7 @@ async def process_target_currency(callback: types.CallbackQuery, state: FSMConte
     
     await callback.message.edit_text(
         f"Вы хотите получить: <b>{target_curr}</b>\n\n"
-        "<b>Шаг 2 из 5:</b> Выберите валюту, которую вы <b>ОТДАЕТЕ</b> взамен:",
+        "<b>Шаг 2 из 6:</b> Выберите валюту, которую вы <b>ОТДАЕТЕ</b> взамен:",
         reply_markup=AdKeyboards.get_currency_selection_keyboard(exclude=target_curr)
     )
     await state.set_state(AdCreation.base_currency)
@@ -48,7 +48,7 @@ async def process_base_currency(callback: types.CallbackQuery, state: FSMContext
 
     await callback.message.edit_text(
         f"Направление: <b>{base_curr} ➡️ {target_curr}</b>\n\n"
-        f"<b>Шаг 3 из 5: Курс</b>\n"
+        f"<b>Шаг 3 из 6: Курс</b>\n"
         f"Введите стоимость {nominal} {target_curr} в {base_curr}.\n"
         f"<i>Пример: 72.5 (за {nominal} {target_curr} вы отдадите 72.5 {base_curr})</i>"
     )
@@ -63,7 +63,7 @@ async def process_rate(message: types.Message, state: FSMContext):
         return await message.answer("❌ Введите положительное число.")
 
     await state.update_data(rate=str(rate))
-    await message.answer("<b>Шаг 4.1 из 5: Лимиты</b>\nВведите МИНИМАЛЬНУЮ сумму одной сделки:")
+    await message.answer("<b>Шаг 4.1 из 6: Лимиты</b>\nВведите МИНИМАЛЬНУЮ сумму одной сделки:")
     await state.set_state(AdCreation.min_limit)
 
 @router.message(AdCreation.min_limit)
@@ -75,7 +75,7 @@ async def process_min_limit(message: types.Message, state: FSMContext):
         return await message.answer("❌ Введите положительное число.")
 
     await state.update_data(min_limit=str(min_val))
-    await message.answer("<b>Шаг 4.2 из 5: Лимиты</b>\nВведите ОБЩИЙ ОБЪЕМ (максимальную сумму) обмена:")
+    await message.answer("<b>Шаг 4.2 из 6: Лимиты</b>\nВведите ОБЩИЙ ОБЪЕМ (максимальную сумму) обмена:")
     await state.set_state(AdCreation.max_limit)
 
 @router.message(AdCreation.max_limit)
@@ -97,7 +97,7 @@ async def process_max_limit(message: types.Message, state: FSMContext, db_sessio
         return await state.clear()
 
     await message.answer(
-        "<b>Шаг 5 из 5: Реквизиты</b>\nВыберите карту для получения/оплаты:",
+        "<b>Шаг 5 из 6: Реквизиты</b>\nВыберите карту для получения/оплаты:",
         reply_markup=AdKeyboards.get_requisite_selection_keyboard(requisites)
     )
     await state.set_state(AdCreation.requisite)
@@ -109,21 +109,35 @@ async def process_requisite(callback: types.CallbackQuery, state: FSMContext, db
     requisite = await user_repo.get_requisite_by_id(req_id)
     
     await state.update_data(requisite_id=req_id, bank=requisite.bank_name)
+    
+    await callback.message.edit_text(
+        "<b>Шаг 6 из 6: Приватность</b>\nКто может видеть ваше объявление и откликаться на него?",
+        reply_markup=AdKeyboards.get_privacy_selection_keyboard()
+    )
+    await state.set_state(AdCreation.is_verified_only)
+
+@router.callback_query(AdCreation.is_verified_only, F.data.startswith("ad_priv_"))
+async def process_privacy_selection(callback: types.CallbackQuery, state: FSMContext):
+    is_verified_only = callback.data == "ad_priv_yes"
+    await state.update_data(is_verified_only=is_verified_only)
+    
     data = await state.get_data()
     
-    # ФОРМИРУЕМ ПРЕВЬЮ ДЛЯ ЛИМИТОВ
+    # ФОРМИРУЕМ ПРЕВЬЮ
     base = data['base_currency']
     target = data['target_currency']
     rate = data['rate']
     nominal = CURRENCY_NOMINALS.get(target, 1)
+    privacy_text = "🔒 Только верифицированные" if is_verified_only else "🌍 Все пользователи"
     
     summary = (
-        f"📋 <b>Проверьте данные объявление:</b>\n"
+        f"📋 <b>Проверьте данные объявления:</b>\n"
         f"━━━━━━━━━━━━━━━\n"
         f"🔄 <b>Направление:</b> {base} ➡️ {target}\n"
         f"💰 <b>Курс:</b> {format_number(rate)} {base} за {nominal} {target}\n"
         f"🏦 <b>Банк:</b> {data['bank']}\n"
         f"📏 <b>Лимиты:</b> {format_number(data['min_limit'])} - {format_number(data['max_limit'])} {base}\n"
+        f"🛡️ <b>Доступ:</b> {privacy_text}\n"
         f"━━━━━━━━━━━━━━━\n"
         f"<i>Объявление будет висеть в маркете, пока вы его не скроете.</i>"
     )

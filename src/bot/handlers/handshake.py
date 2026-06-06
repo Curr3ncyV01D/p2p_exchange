@@ -34,6 +34,17 @@ async def request_deal(callback: types.CallbackQuery, state: FSMContext, db_sess
         
     ad, owner = ad_info
     
+    # Проверка на верификацию (VIP-сделки)
+    user_repo = UserRepository(db_session)
+    user = await user_repo.get_user_by_id(callback.from_user.id)
+    
+    if ad.is_verified_only and not user.is_verified:
+        return await callback.answer(
+            "🔒 Это объявление доступно только для верифицированных пользователей.\n\n"
+            "Пройдите верификацию в профиле, чтобы совершать VIP-сделки.", 
+            show_alert=True
+        )
+
     if ad.status != AdStatus.ACTIVE:
         return await callback.answer("❌ Объявление уже неактуально или скрыто!", show_alert=True)
     
@@ -133,7 +144,7 @@ async def process_deal_requisite(callback: types.CallbackQuery, state: FSMContex
         
         await callback.message.edit_text("⏳ <b>Запрос отправлен продавцу.</b>\nОжидайте подтверждения...", reply_markup=None)
     except Exception:
-        await ad_repo.update_ad_status_by_id(deal_public_id, AdStatus.ACTIVE)
+        await ad_repo.update_ad_status(deal_public_id, AdStatus.ACTIVE)
         await callback.answer("❌ Не удалось связаться с продавцом.", show_alert=True)
 
     # Мы НЕ очищаем state Тейкера! Данные нужны Мейкеру.
@@ -161,7 +172,7 @@ async def handle_accept(
     # Если почему-то данных нет (таймаут Redis), отменяем всё безопасно
     if not amount_base_str or not taker_req_id:
         ad_repo = AdRepository(db_session)
-        await ad_repo.update_ad_status_by_id(deal_public_id, AdStatus.ACTIVE)
+        await ad_repo.update_ad_status(deal_public_id, AdStatus.ACTIVE)
         return await callback.message.edit_text("❌ Ошибка данных сессии. Объявление возвращено в маркет.")
 
     amount_base = Decimal(amount_base_str)
@@ -232,7 +243,7 @@ async def handle_reject(callback: types.CallbackQuery, bot: Bot, state: FSMConte
     deal_public_id, taker_id = parts[1], int(parts[2])
 
     ad_repo = AdRepository(db_session)
-    await ad_repo.update_ad_status_by_id(deal_public_id, AdStatus.ACTIVE)
+    await ad_repo.update_ad_status(deal_public_id, AdStatus.ACTIVE)
 
     # Очищаем кэш тейкера
     taker_key = StorageKey(bot_id=bot.id, chat_id=taker_id, user_id=taker_id)

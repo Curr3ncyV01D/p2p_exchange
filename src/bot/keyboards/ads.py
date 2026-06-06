@@ -43,6 +43,15 @@ class AdKeyboards:
         return builder.as_markup()
 
     @staticmethod
+    def get_privacy_selection_keyboard():
+        """Выбор приватности объявления"""
+        builder = InlineKeyboardBuilder()
+        builder.row(types.InlineKeyboardButton(text="🔒 Только верифицированные", callback_data="ad_priv_yes"))
+        builder.row(types.InlineKeyboardButton(text="🌍 Все пользователи", callback_data="ad_priv_no"))
+        UIHelper.add_common_buttons(builder, close=True)
+        return builder.as_markup()
+
+    @staticmethod
     def get_confirm_keyboard():
         """Финальное подтверждение создания"""
         builder = InlineKeyboardBuilder()

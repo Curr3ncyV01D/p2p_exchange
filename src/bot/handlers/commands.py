@@ -1,6 +1,7 @@
 from aiogram import Router, types, Bot
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import LinkPreviewOptions
+from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.models.user import User
 from src.database.repository.ad_repo import AdRepository
@@ -13,10 +14,14 @@ router = Router()
 async def cmd_start(
     message: types.Message, 
     command: CommandObject,
+    state: FSMContext,
     user: User, 
     db_session: AsyncSession, 
     bot_username: str
 ):
+    # При любом старте сбрасываем состояние
+    await state.clear()
+    
     # Проверяем наличие аргументов в команде /start
     if command.args and command.args.startswith("ad_"):
         await message.delete()
