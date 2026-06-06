@@ -1,7 +1,10 @@
 from sqlalchemy import BigInteger, String, Float, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import List
+from typing import List, Optional, TYPE_CHECKING
 from .base import Base
+
+if TYPE_CHECKING:
+    from .verification import VerificationRequest
 
 class User(Base):
     __tablename__ = "users"
@@ -18,3 +21,4 @@ class User(Base):
     conflict_strikes: Mapped[int] = mapped_column(default=0)  # Счетчик штрафов
 
     requisites: Mapped[List["UserRequisite"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    verification_request: Mapped[Optional["VerificationRequest"]] = relationship(back_populates="user", cascade="all, delete-orphan")

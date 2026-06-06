@@ -5,12 +5,35 @@ from src.database.models.user import User
 from src.database.models.deal import Deal, DealStatus
 from src.database.models.dispute import Dispute
 from src.database.models.ad import Ad, AdStatus
+from src.database.models.verification import VerificationRequest, VerificationStatus
 
 class AdminService:
     def __init__(self, session: AsyncSession, repo: UserRepository):
         self.session = session
         self.repo = repo
     
+    async def resolve_verification(self, request_id: int, action: str) -> tuple[VerificationRequest | None, User | None]:
+        """Одобрение или отклонение заявки на верификацию"""
+        query = select(VerificationRequest).where(VerificationRequest.id == request_id)
+        result = await self.session.execute(query)
+        verification = result.scalar_one_or_none()
+        
+        if not verification:
+            return None, None
+            
+        user = await self.repo.get_user_by_id(verification.user_id)
+        if not user:
+            return None, None
+            
+        if action == "approve":
+            user.is_verified = True
+            verification.status = VerificationStatus.COMPLETED
+        else:
+            verification.status = VerificationStatus.DECLINED
+            
+        await self.session.commit()
+        return verification, user
+
     async def resolve_dispute(self, dispute_id: int, resolution: str):
         """Закрытие спора арбитром или пользователем"""
         # 1. Находим спор
